@@ -3,7 +3,7 @@
 A simple, fun website that lets kids design **2D Roblox clothing** (shirts, pants, t-shirts)
 and export an **upload-ready 585×559 PNG** — then upload it on Roblox.
 
-**Live site:** _(added after deploy)_
+**Live site:** https://phill-svg.github.io/blockbox-studio/
 
 ## Why it's safe for kids
 - **No accounts, no server, no tracking.** It's a single static site.
