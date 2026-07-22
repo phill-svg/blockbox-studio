@@ -1,0 +1,130 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Blockbox Studio — Make Roblox Clothes</title>
+<meta name="description" content="A simple, fun way for kids to design 2D Roblox shirts, pants and t-shirts and export an upload-ready image.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='14' y='14' width='72' height='72' rx='16' fill='%236C5CE7'/><circle cx='38' cy='44' r='7' fill='%23fff'/><circle cx='62' cy='44' r='7' fill='%23fff'/></svg>">
+<link rel="stylesheet" href="css/styles.css">
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo-mark">◲</span>
+    <span class="brand-name">Blockbox <b>Studio</b></span>
+  </div>
+
+  <div class="garment-toggle">
+    <button data-garment="shirt">👕 Shirt</button>
+    <button data-garment="pants">👖 Pants</button>
+    <button data-garment="tshirt">🎽 Tee</button>
+  </div>
+
+  <div class="top-actions">
+    <button id="btnUndo" class="icon-btn" title="Undo">↶</button>
+    <button id="btnRedo" class="icon-btn" title="Redo">↷</button>
+    <button id="btnSave" class="ghost-btn" title="Save project to a file">💾 Save</button>
+    <button id="btnLoad" class="ghost-btn" title="Open a saved project">📂 Open</button>
+    <button id="btnHelp" class="ghost-btn">❓ Help</button>
+    <button id="btnExportTop" class="cta-btn small">⬇ Get PNG</button>
+  </div>
+</header>
+
+<main class="studio">
+  <!-- Tool rail -->
+  <nav class="rail" aria-label="Tools">
+    <button data-tool="colors"   class="rail-btn c-sky"><span>🎨</span>Colours</button>
+    <button data-tool="patterns" class="rail-btn c-grape"><span>🧩</span>Patterns</button>
+    <button data-tool="stickers" class="rail-btn c-coral"><span>⭐</span>Stickers</button>
+    <button data-tool="text"     class="rail-btn c-mint"><span>🔤</span>Text</button>
+    <button data-tool="upload"   class="rail-btn c-sun"><span>📷</span>Upload</button>
+  </nav>
+
+  <!-- Options drawer + starters -->
+  <section class="drawer-wrap">
+    <div id="drawer" class="drawer"></div>
+    <div class="starters">
+      <h4>Starter outfits</h4>
+      <div id="presetList" class="preset-list"></div>
+    </div>
+  </section>
+
+  <!-- Editing stage -->
+  <section class="stage-col">
+    <div id="panelTabs" class="tabs"></div>
+    <div class="stage-frame">
+      <canvas id="stage"></canvas>
+    </div>
+    <div class="stage-actions">
+      <button id="btnDelete" class="ghost-btn">🗑 Delete selected</button>
+      <button id="btnClear" class="ghost-btn">✨ Clear this part</button>
+    </div>
+    <p class="tip">Tip: drag stickers to move them, drag a corner to resize, and design each part with the tabs above.</p>
+  </section>
+
+  <!-- Live preview -->
+  <aside class="preview-col">
+    <h4>Live preview</h4>
+    <div class="preview-card">
+      <canvas id="preview" width="300" height="360"></canvas>
+    </div>
+    <div id="sideToggle" class="side-toggle">
+      <button data-side="front" class="on">Front</button>
+      <button data-side="back">Back</button>
+    </div>
+    <button id="btnExport" class="cta-btn">⬇ Save PNG for Roblox</button>
+    <button id="btnUploadHelp" class="link-btn">How do I upload it to Roblox?</button>
+  </aside>
+</main>
+
+<!-- hidden inputs -->
+<input id="fileProj" type="file" accept=".json,application/json" hidden>
+<input id="fileImg" type="file" accept="image/*" hidden>
+
+<!-- modals -->
+<div id="backdrop" class="backdrop"></div>
+
+<div id="helpModal" class="modal">
+  <button class="modal-x" data-close>✕</button>
+  <h2>How to use Blockbox Studio</h2>
+  <ol class="steps">
+    <li>Pick <b>Shirt</b>, <b>Pants</b> or <b>Tee</b> at the top.</li>
+    <li>Use the coloured tools on the left: <b>Colours, Patterns, Stickers, Text</b> and <b>Upload</b>.</li>
+    <li>Design each part with the <b>tabs</b> (Front / Back / Sleeves).</li>
+    <li>Watch the <b>live preview</b> on the right update as you go.</li>
+    <li>Press <b>Save PNG for Roblox</b> to download your image.</li>
+    <li>Upload it on Roblox (we'll show you how).</li>
+  </ol>
+  <p class="fine">Everything stays on your own computer — no account, nothing is sent anywhere.</p>
+</div>
+
+<div id="uploadModal" class="modal">
+  <button class="modal-x" data-close>✕</button>
+  <h2>Uploading to Roblox 🚀</h2>
+  <p>Your PNG downloaded! A website can't upload to Roblox for you, so finish on Roblox's own site:</p>
+  <ol class="steps">
+    <li>Go to <b>create.roblox.com</b> and sign in.</li>
+    <li>Open <b>Creator Dashboard → Avatar Items → Classics</b>.</li>
+    <li>Click <b>Upload</b>, choose <b>Shirt / Pants / T-Shirt</b>, and pick your PNG.</li>
+    <li>Give it a name, then upload. (Selling needs Roblox <b>Premium</b>; a small fee applies.)</li>
+    <li>Wait for it to pass moderation (usually within a day).</li>
+  </ol>
+  <p class="fine"><b>Test for free first:</b> in Roblox Studio, put a Shirt on a Block-rig dummy and set its
+     ShirtTemplate to your image — check it looks right before you pay to upload.</p>
+  <p class="fine">Only upload art you're allowed to use. Copyrighted logos/characters get rejected.</p>
+</div>
+
+<div id="warnModal" class="modal">
+  <button class="modal-x" data-close>✕</button>
+  <h2>Quick reminder 🖼️</h2>
+  <p>You can add your own picture, but please <b>only use art you made or are allowed to use</b>.</p>
+  <p class="fine">Roblox rejects copyrighted images (logos, cartoon characters, photos of people). Your picture stays on your computer.</p>
+  <button id="warnOk" class="cta-btn">Got it — choose a picture</button>
+</div>
+
+<script src="vendor/fabric.min.js"></script>
+<script src="js/regions.js"></script>
+<script src="js/patterns.js"></script>
+<script src="js/stickers.js"></script>
+<script src="js/presets.js"></script>
+<script src="js/preview.js"></script>
+<script src="js/export.js"></script>
+<script src="js/app.js"></script>
