@@ -54,11 +54,14 @@
     <div class="live-editor">
       <div class="le-head"></div>
       <div class="le-mid">
-        <div class="le-arm le-arm-l"></div>
-        <div class="le-slot"><canvas id="stage"></canvas></div>
-        <div class="le-arm le-arm-r"></div>
+        <div class="le-cell le-left"></div>
+        <div class="le-cell le-torso"><canvas id="stage"></canvas></div>
+        <div class="le-cell le-right"></div>
       </div>
-      <div class="le-legs"><div class="le-leg"></div><div class="le-leg"></div></div>
+      <div class="le-legs">
+        <div class="le-cell le-leg le-leg-l"></div>
+        <div class="le-cell le-leg le-leg-r"></div>
+      </div>
     </div>
     <div class="stage-actions">
       <button id="btnDelete" class="ghost-btn">🗑 Delete selected</button>

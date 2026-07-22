@@ -54,10 +54,21 @@
   /* ---------- display sizing (keeps internal resolution, scales CSS only) ---------- */
   function fitCanvasDisplay() {
     const d = panelDims(state.activePanel);
-    const maxW = Math.min(250, Math.max(150, window.innerWidth * 0.52));
-    const maxH = Math.min(360, Math.max(210, window.innerHeight * 0.46));
-    const scale = Math.min(maxW / d.w, maxH / d.h);
+    const maxW = Math.min(250, Math.max(140, window.innerWidth * 0.44));
+    const maxH = Math.min(360, Math.max(200, window.innerHeight * 0.46));
+    const fw = 128 * S;
+    const refW = Math.round(fw * Math.min(maxW / fw, maxH / fw));
+    const le = document.querySelector('.live-editor');
+    if (le) le.style.setProperty('--le-w', refW + 'px');
+    // Fit the editable panel into the box for the limb it represents (keeps aspect).
+    let boxW, boxH;
+    if (state.activePanel === 'arms') {
+      if (state.garment === 'pants') { boxW = refW * 0.46; boxH = refW * 0.82; }
+      else { boxW = refW * 0.5; boxH = refW; }
+    } else { boxW = refW; boxH = refW; }
+    const scale = Math.min(boxW / d.w, boxH / d.h);
     canvas.setDimensions({ width: Math.round(d.w * scale) + 'px', height: Math.round(d.h * scale) + 'px' }, { cssOnly: true });
+    canvas.calcOffset();
   }
 
   /* ---------- snapshots ---------- */
@@ -84,19 +95,35 @@
     if (!el) return;
     el.style.backgroundColor = color;
     el.style.backgroundImage = img ? 'url(' + img + ')' : 'none';
+    el.style.boxShadow = '';
   }
-  // Paint the live body parts around the editable torso canvas.
+  // Which body cell currently holds the editable canvas.
+  function activeCell() {
+    if (state.activePanel === 'arms') return document.querySelector(state.garment === 'pants' ? '.le-leg-l' : '.le-left');
+    return document.querySelector('.le-torso');
+  }
+  // Move the canvas onto the limb being edited, and paint the rest of the body live.
   function drawPreview() {
     const s = state.snaps;
     const isPants = state.garment === 'pants';
-    const armSnap = s.arms ? s.arms.toDataURL() : null;
-    const armImg = (!isPants && armSnap) ? armSnap : null;
-    const armColor = isPants ? '#FFE0A3' : state.baseColor;
-    setDecoEl(document.querySelector('.le-arm-l'), armImg, armColor);
-    setDecoEl(document.querySelector('.le-arm-r'), armImg, armColor);
-    const legImg = (isPants && armSnap) ? armSnap : null;
-    const legColor = isPants ? state.baseColor : '#5B6473';
-    document.querySelectorAll('.le-leg').forEach(el => setDecoEl(el, legImg, legColor));
+    const front = s.front ? s.front.toDataURL() : null;
+    const arm = s.arms ? s.arms.toDataURL() : null;
+    const active = activeCell();
+    const wrap = canvas.wrapperEl;
+    if (wrap && active && wrap.parentElement !== active) { active.appendChild(wrap); canvas.calcOffset(); }
+    const decos = [
+      ['.le-torso', front, state.baseColor],
+      ['.le-left', isPants ? null : arm, isPants ? '#FFE0A3' : state.baseColor],
+      ['.le-right', isPants ? null : arm, isPants ? '#FFE0A3' : state.baseColor],
+      ['.le-leg-l', isPants ? arm : null, isPants ? state.baseColor : '#5B6473'],
+      ['.le-leg-r', isPants ? arm : null, isPants ? state.baseColor : '#5B6473']
+    ];
+    decos.forEach(([sel, img, color]) => {
+      const el = document.querySelector(sel);
+      if (!el) return;
+      if (el === active) { el.style.backgroundImage = 'none'; el.style.backgroundColor = 'transparent'; el.style.boxShadow = 'none'; }
+      else setDecoEl(el, img, color);
+    });
   }
 
   /* ---------- change lifecycle ---------- */
