@@ -32,6 +32,7 @@
   <!-- Tool rail -->
   <nav class="rail" aria-label="Tools">
     <button data-tool="colors"   class="rail-btn c-sky"><span>🎨</span>Colours</button>
+    <button data-tool="brush"    class="rail-btn c-rose"><span>🖌️</span>Brush</button>
     <button data-tool="patterns" class="rail-btn c-grape"><span>🧩</span>Patterns</button>
     <button data-tool="stickers" class="rail-btn c-coral"><span>⭐</span>Stickers</button>
     <button data-tool="text"     class="rail-btn c-mint"><span>🔤</span>Text</button>
@@ -47,31 +48,33 @@
     </div>
   </section>
 
-  <!-- Editing stage -->
+  <!-- Live avatar editor: you design directly on the character -->
   <section class="stage-col">
     <div id="panelTabs" class="tabs"></div>
-    <div class="stage-frame">
-      <canvas id="stage"></canvas>
+    <div class="live-editor">
+      <div class="le-head"></div>
+      <div class="le-mid">
+        <div class="le-arm le-arm-l"></div>
+        <div class="le-slot"><canvas id="stage"></canvas></div>
+        <div class="le-arm le-arm-r"></div>
+      </div>
+      <div class="le-legs"><div class="le-leg"></div><div class="le-leg"></div></div>
     </div>
     <div class="stage-actions">
       <button id="btnDelete" class="ghost-btn">🗑 Delete selected</button>
       <button id="btnClear" class="ghost-btn">✨ Clear this part</button>
     </div>
-    <p class="tip">Tip: drag stickers to move them, drag a corner to resize, and design each part with the tabs above.</p>
+    <p class="tip">You're designing right on the character! Use the tabs to switch between Front, Back and Sleeves.</p>
   </section>
 
-  <!-- Live preview -->
+  <!-- Actions -->
   <aside class="preview-col">
-    <h4>Live preview</h4>
-    <div class="preview-card">
-      <canvas id="preview" width="300" height="360"></canvas>
-    </div>
-    <div id="sideToggle" class="side-toggle">
-      <button data-side="front" class="on">Front</button>
-      <button data-side="back">Back</button>
-    </div>
+    <h4>Finish up</h4>
     <button id="btnExport" class="cta-btn">⬇ Save PNG for Roblox</button>
     <button id="btnUploadHelp" class="link-btn">How do I upload it to Roblox?</button>
+    <div class="finish-note">
+      Your picture saves as a ready-to-use Roblox clothing image (585×559).
+    </div>
   </aside>
 </main>
 

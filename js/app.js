@@ -4,7 +4,7 @@
    avatar preview and the final export. No frameworks, no network at runtime. */
 (function () {
   const S = RCS.EDIT_SCALE;
-  const PROPS = ['rcsRole', 'custom', 'rcsSticker'];
+  const PROPS = ['rcsRole', 'custom', 'rcsSticker', 'globalCompositeOperation'];
   const $ = (id) => document.getElementById(id);
 
   const FONTS = [
@@ -20,6 +20,7 @@
   const state = {
     garment: 'shirt', baseColor: '#4CB8FF', activePanel: 'front',
     activeColor: '#6C5CE7', color2: '#ffffff', previewSide: 'front',
+    brushMode: 'paint', brushSize: 14,
     panels: {}, snaps: {}
   };
 
@@ -50,6 +51,15 @@
     const j = serialize(oc); oc.dispose(); return j;
   }
 
+  /* ---------- display sizing (keeps internal resolution, scales CSS only) ---------- */
+  function fitCanvasDisplay() {
+    const d = panelDims(state.activePanel);
+    const maxW = Math.min(250, Math.max(150, window.innerWidth * 0.52));
+    const maxH = Math.min(360, Math.max(210, window.innerHeight * 0.46));
+    const scale = Math.min(maxW / d.w, maxH / d.h);
+    canvas.setDimensions({ width: Math.round(d.w * scale) + 'px', height: Math.round(d.h * scale) + 'px' }, { cssOnly: true });
+  }
+
   /* ---------- snapshots ---------- */
   function snapActive() { state.snaps[state.activePanel] = canvas.toCanvasElement(); }
 
@@ -70,7 +80,24 @@
     let n = ps.length; if (!n) return cb && cb();
     ps.forEach(p => renderOffscreen(p, () => { if (--n === 0) cb && cb(); }));
   }
-  function drawPreview() { RCS.Preview.draw($('preview'), state); }
+  function setDecoEl(el, img, color) {
+    if (!el) return;
+    el.style.backgroundColor = color;
+    el.style.backgroundImage = img ? 'url(' + img + ')' : 'none';
+  }
+  // Paint the live body parts around the editable torso canvas.
+  function drawPreview() {
+    const s = state.snaps;
+    const isPants = state.garment === 'pants';
+    const armSnap = s.arms ? s.arms.toDataURL() : null;
+    const armImg = (!isPants && armSnap) ? armSnap : null;
+    const armColor = isPants ? '#FFE0A3' : state.baseColor;
+    setDecoEl(document.querySelector('.le-arm-l'), armImg, armColor);
+    setDecoEl(document.querySelector('.le-arm-r'), armImg, armColor);
+    const legImg = (isPants && armSnap) ? armSnap : null;
+    const legColor = isPants ? state.baseColor : '#5B6473';
+    document.querySelectorAll('.le-leg').forEach(el => setDecoEl(el, legImg, legColor));
+  }
 
   /* ---------- change lifecycle ---------- */
   function afterChange() {
@@ -173,6 +200,16 @@
     const bg = getBg(canvas); bg.set({ fill: state.baseColor, custom: false });
     canvas.requestRenderAll(); pushHistory(); afterChange();
   }
+  function ensureBrush() {
+    if (!canvas.freeDrawingBrush) canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+    const b = canvas.freeDrawingBrush;
+    b.width = state.brushSize;
+    b.color = state.brushMode === 'erase' ? 'rgba(0,0,0,1)' : state.activeColor;
+  }
+  function setDrawing(on) {
+    canvas.isDrawingMode = on;
+    if (on) { ensureBrush(); canvas.discardActiveObject(); canvas.requestRenderAll(); }
+  }
   function deleteActive() {
     const o = canvas.getActiveObject();
     if (o && o.rcsRole !== 'bg') { canvas.remove(o); canvas.discardActiveObject(); pushHistory(); afterChange(); }
@@ -193,9 +230,12 @@
     canvas.setDimensions({ width: d.w, height: d.h });
     canvas.loadFromJSON(state.panels[p] || freshPanel(p), () => {
       const bg = getBg(canvas); if (bg && !bg.custom) bg.set('fill', state.baseColor);
+      fitCanvasDisplay();
       canvas.renderAll();
       history = []; hIdx = -1; pushHistory();
-      snapActive(); drawPreview(); updatePanelTabs(); cb && cb();
+      snapActive(); drawPreview(); updatePanelTabs();
+      if (currentTool === 'brush') setDrawing(true);
+      cb && cb();
     });
   }
   function switchPanel(p) {
@@ -211,8 +251,6 @@
     document.querySelectorAll('[data-garment]').forEach(b => b.classList.toggle('on', b.dataset.garment === g));
     const first = panelList()[0];
     loadPanel(first, () => refreshInactive(drawPreview));
-    // update preview side toggle availability
-    $('sideToggle').style.display = g === 'tshirt' ? 'none' : 'flex';
   }
 
   /* ---------- presets ---------- */
@@ -270,7 +308,6 @@
     document.documentElement.style.setProperty('--base', state.baseColor);
     buildPanelTabs();
     document.querySelectorAll('[data-garment]').forEach(b => b.classList.toggle('on', b.dataset.garment === state.garment));
-    $('sideToggle').style.display = state.garment === 'tshirt' ? 'none' : 'flex';
     loadPanel(panelList()[0], () => refreshInactive(drawPreview));
   }
   function doExport() {
@@ -309,6 +346,34 @@
       d.appendChild(label('Whole outfit base'));
       d.appendChild(swatchRow(PALETTE, state.baseColor, c => { setBaseColor(c); renderDrawer('colors'); }));
       d.appendChild(customColor(state.baseColor, c => { setBaseColor(c); renderDrawer('colors'); }));
+    }
+
+    if (tool === 'brush') {
+      head.textContent = 'Paint brush';
+      const modeRow = document.createElement('div'); modeRow.className = 'chips';
+      [['paint', '🖌️ Brush'], ['erase', '🧽 Rubber']].forEach(([m, lbl]) => {
+        const b = document.createElement('button'); b.className = 'chip big-chip' + (state.brushMode === m ? ' on' : '');
+        b.textContent = lbl;
+        b.onclick = () => { state.brushMode = m; ensureBrush(); renderDrawer('brush'); };
+        modeRow.appendChild(b);
+      });
+      d.appendChild(modeRow);
+      if (state.brushMode === 'paint') {
+        d.appendChild(label('Brush colour'));
+        d.appendChild(swatchRow(PALETTE, state.activeColor, c => { state.activeColor = c; ensureBrush(); renderDrawer('brush'); }));
+        d.appendChild(customColor(state.activeColor, c => { state.activeColor = c; ensureBrush(); renderDrawer('brush'); }));
+      }
+      d.appendChild(label('Brush size'));
+      const srow = document.createElement('div'); srow.className = 'chips';
+      [['Fine', 7], ['Small', 14], ['Big', 26], ['Huge', 44]].forEach(([lbl, px]) => {
+        const b = document.createElement('button'); b.className = 'chip' + (state.brushSize === px ? ' on' : '');
+        b.textContent = lbl; b.onclick = () => { state.brushSize = px; ensureBrush(); renderDrawer('brush'); };
+        srow.appendChild(b);
+      });
+      d.appendChild(srow);
+      const p = document.createElement('p'); p.className = 'hint';
+      p.innerHTML = 'Draw right on the shirt! 🎨<br>Use the <b>tabs</b> to draw on Front, Back or Sleeves. Pick another tool to move or delete your drawings.';
+      d.appendChild(p);
     }
 
     if (tool === 'patterns') {
@@ -426,6 +491,11 @@
   /* ---------- init ---------- */
   function init() {
     canvas = new fabric.Canvas('stage', { backgroundColor: 'transparent', preserveObjectStacking: true, selection: true });
+    canvas.on('path:created', (e) => {
+      const path = e.path;
+      if (state.brushMode === 'erase') path.set({ globalCompositeOperation: 'destination-out', selectable: false, evented: false });
+      canvas.renderAll(); pushHistory(); afterChange();
+    });
     canvas.on('object:modified', () => { pushHistory(); afterChange(); });
     canvas.on('object:removed', () => { if (!restoring) afterChange(); });
     canvas.on('text:changed', () => afterChange());
@@ -466,15 +536,6 @@
     };
     $('fileImg').onchange = e => { const f = e.target.files[0]; if (f) applyImageFile(f); e.target.value = ''; };
 
-    // preview side toggle
-    document.querySelectorAll('[data-side]').forEach(b => {
-      b.onclick = () => {
-        state.previewSide = b.dataset.side;
-        document.querySelectorAll('[data-side]').forEach(x => x.classList.toggle('on', x === b));
-        drawPreview();
-      };
-    });
-
     // presets
     const pl = $('presetList');
     RCS.Presets.forEach(pr => {
@@ -488,6 +549,9 @@
     document.querySelectorAll('[data-close]').forEach(b => b.onclick = closeModals);
     $('backdrop').onclick = closeModals;
     $('warnOk').onclick = () => { closeModals(); $('fileImg').click(); };
+
+    let rz;
+    window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(fitCanvasDisplay, 120); });
 
     buildPanelTabs();
     selectTool('colors');
@@ -507,6 +571,7 @@
   function selectTool(tool) {
     currentTool = tool;
     document.querySelectorAll('[data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === tool));
+    setDrawing(tool === 'brush');
     renderDrawer(tool);
   }
 

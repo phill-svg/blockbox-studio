@@ -100,6 +100,7 @@ button { font-family: inherit; cursor: pointer; border: none; }
 }
 .rail-btn span { font-size: 24px; }
 .rail-btn.c-sky.on { border-color: var(--sky); }
+.rail-btn.c-rose.on { border-color: #FF7AC6; }
 .rail-btn.c-grape.on { border-color: var(--grape); }
 .rail-btn.c-coral.on { border-color: var(--coral); }
 .rail-btn.c-mint.on { border-color: var(--mint); }
@@ -168,6 +169,35 @@ button { font-family: inherit; cursor: pointer; border: none; }
 .stage-actions { display: flex; gap: 8px; }
 .tip { font-size: 13px; color: var(--muted); max-width: 380px; text-align: center; line-height: 1.5; }
 
+/* Live avatar editor — the editable canvas is the torso, with a live body around it */
+.live-editor {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 20px 18px; border-radius: 24px; border: 3px solid var(--line);
+  background: linear-gradient(180deg, #fbfcff, #eaf0ff); box-shadow: var(--shadow);
+}
+.le-head {
+  width: 86px; height: 86px; border-radius: 20px; background-color: #FFE0A3;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='36' cy='46' r='7' fill='%23232A45'/%3E%3Ccircle cx='64' cy='46' r='7' fill='%23232A45'/%3E%3Cpath d='M34 64 Q50 80 66 64' stroke='%23232A45' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-size: 86%; background-position: center; background-repeat: no-repeat;
+  box-shadow: inset 0 0 0 3px rgba(35,42,69,.12);
+}
+.le-mid { display: flex; align-items: stretch; gap: 8px; }
+.le-arm {
+  width: 42px; border-radius: 12px; background-color: var(--base);
+  background-size: cover; background-position: center;
+  box-shadow: inset 0 0 0 3px rgba(35,42,69,.10);
+}
+.le-slot { display: flex; align-items: center; justify-content: center; }
+.le-slot .canvas-container { border-radius: 8px; overflow: hidden; box-shadow: 0 6px 16px rgba(35,42,69,.14); }
+.le-slot .canvas-container canvas { touch-action: none; }
+.le-legs { display: flex; gap: 8px; }
+.le-leg {
+  width: 58px; height: 118px; border-radius: 12px; background-color: #5B6473;
+  background-size: cover; background-position: center;
+  box-shadow: inset 0 0 0 3px rgba(35,42,69,.10);
+}
+.finish-note { font-size: 13px; color: var(--muted); line-height: 1.5; background: var(--panel); padding: 12px 14px; border-radius: 14px; box-shadow: var(--shadow); }
+
 /* preview */
 .preview-col { display: flex; flex-direction: column; gap: 10px; position: sticky; top: 84px; }
 .preview-col h4 { font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
@@ -198,20 +228,54 @@ button { font-family: inherit; cursor: pointer; border: none; }
 .modal .cta-btn { margin-top: 14px; }
 
 /* ---------- responsive ---------- */
+/* Canvas display size is set in JS via Fabric's cssOnly setDimensions (aspect preserved). */
+.stage-frame { max-width: 100%; }
+.big-chip { flex: 1; text-align: center; padding: 13px; font-size: 15px; }
+
+/* Tablet / iPad landscape */
 @media (max-width: 1180px) {
   .studio { grid-template-columns: auto 240px 1fr; }
-  .preview-col { grid-column: 1 / -1; grid-row: 1; flex-direction: row; flex-wrap: wrap; align-items: center; position: static; }
-  .preview-card { flex: 1; }
+  .preview-col { grid-column: 1 / -1; grid-row: 1; flex-direction: row; flex-wrap: wrap; align-items: center; position: static; gap: 14px; }
+  .preview-col h4 { width: 100%; }
+  .preview-card { flex: 0 0 auto; }
+  .preview-col .cta-btn, .preview-col .side-toggle { flex: 1; min-width: 190px; }
+  .preview-col .link-btn { flex: 1 0 100%; }
 }
+
+/* Phones / iPad portrait — single column, canvas up top */
 @media (max-width: 860px) {
-  .studio { grid-template-columns: 1fr; }
-  .rail { flex-direction: row; overflow-x: auto; padding-bottom: 4px; }
-  .rail-btn { width: 78px; flex: 0 0 auto; }
+  .studio { grid-template-columns: 1fr; gap: 14px; padding: 12px; }
+  .stage-col { order: 1; }
+  .rail { order: 2; flex-direction: row; overflow-x: auto; gap: 8px; padding: 6px 2px; -webkit-overflow-scrolling: touch; }
+  .rail-btn { width: 74px; flex: 0 0 auto; padding: 10px 4px; font-size: 12px; }
+  .rail-btn span { font-size: 22px; }
   .drawer-wrap { order: 3; }
-  .stage-col { order: 2; }
-  .preview-col { order: 1; }
-  .top-actions { width: 100%; }
-  .top-actions .ghost-btn span, .brand-name { font-size: 18px; }
+  .preview-col { order: 4; align-items: stretch; }
+  .stage-frame { padding: 10px; border-radius: 16px; }
+  .top-actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+  .brand-name { font-size: 18px; }
+  .garment-toggle button { padding: 8px 12px; font-size: 14px; }
+}
+
+/* Small phones (iPhone) */
+@media (max-width: 480px) {
+  .topbar { padding: 10px 12px; gap: 10px; }
+  .brand { flex: 1; }
+  .garment-toggle { order: 3; width: 100%; justify-content: center; }
+  .top-actions { gap: 6px; }
+  .top-actions .ghost-btn { padding: 8px 10px; font-size: 13px; }
+  .icon-btn { width: 38px; height: 38px; font-size: 18px; }
+  .preset-list { grid-template-columns: 1fr; }
+  .cta-btn { font-size: 16px; padding: 14px; }
+  .drawer, .starters { padding: 13px; }
+  #preview { max-width: 240px; margin: 0 auto; }
+}
+
+/* Bigger touch targets on touch devices */
+@media (hover: none) {
+  .swatch { min-height: 40px; }
+  .chip { padding: 10px 14px; }
+  .tab { padding: 11px 18px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
