@@ -21,8 +21,33 @@
     garment: 'shirt', baseColor: '#ffffff', activePanel: 'front',
     activeColor: '#6C5CE7', color2: '#ffffff', previewSide: 'front',
     brushMode: 'paint', brushSize: 14,
-    panels: {}, snaps: {}
+    panels: {}, snaps: {}, store: {}
   };
+
+  // Guided stages: walk shirt parts, then pants parts.
+  const STEPS = [
+    { g: 'shirt', p: 'front', label: '👕 Shirt — Front' },
+    { g: 'shirt', p: 'back',  label: '👕 Shirt — Back' },
+    { g: 'shirt', p: 'arms',  label: '👕 Sleeves' },
+    { g: 'pants', p: 'front', label: '👖 Pants — Front' },
+    { g: 'pants', p: 'back',  label: '👖 Pants — Back' },
+    { g: 'pants', p: 'arms',  label: '👖 Legs' }
+  ];
+  function currentStepIndex() { return STEPS.findIndex(s => s.g === state.garment && s.p === state.activePanel); }
+  function updateStepper() {
+    const label = $('stepLabel'); if (!label) return;
+    const dots = $('stepDots'), back = $('stepBack'), next = $('stepNext'), idx = currentStepIndex();
+    if (idx === -1) {
+      label.textContent = state.garment === 'tshirt' ? '🎽 T-shirt design' : 'Design';
+      dots.innerHTML = ''; back.disabled = next.disabled = true; back.style.visibility = 'hidden'; return;
+    }
+    back.disabled = next.disabled = false;
+    label.textContent = 'Stage ' + (idx + 1) + ' / ' + STEPS.length + '  ·  ' + STEPS[idx].label;
+    back.style.visibility = idx === 0 ? 'hidden' : 'visible';
+    next.textContent = idx === STEPS.length - 1 ? '🎉 Done' : 'Next ▶';
+    dots.innerHTML = STEPS.map((_, i) => '<span class="dot' + (i === idx ? ' on' : '') + '"></span>').join('');
+  }
+  function goStep(i) { if (i < 0 || i >= STEPS.length) return; const s = STEPS[i]; setGarment(s.g, s.p); updateStepper(); }
 
   let canvas;               // fabric.Canvas
   let history = [], hIdx = -1, restoring = false, warnedUpload = false;
@@ -295,7 +320,7 @@
       fitCanvasDisplay();
       canvas.renderAll();
       history = []; hIdx = -1; pushHistory();
-      snapActive(); drawPreview(); updatePanelTabs();
+      snapActive(); drawPreview(); updatePanelTabs(); updateStepper();
       if (currentTool === 'brush') setDrawing(true);
       setObjectsInteractive(toolAllowsMove(currentTool)); updateObjBar();
       cb && cb();
@@ -306,14 +331,20 @@
     state.panels[state.activePanel] = serialize(canvas); snapActive();
     loadPanel(p);
   }
-  function setGarment(g) {
-    if (g === state.garment) return;
+  function setGarment(g, panel) {
+    if (g === state.garment) { if (panel && panel !== state.activePanel) switchPanel(panel); updateStepper(); return; }
+    // Save the current garment's design, then restore the target garment's (if any).
     state.panels[state.activePanel] = serialize(canvas);
-    state.garment = g; state.panels = {}; state.snaps = {};
+    state.store[state.garment] = { panels: state.panels, baseColor: state.baseColor };
+    state.garment = g;
+    const saved = state.store[g];
+    state.panels = saved ? saved.panels : {};
+    state.baseColor = saved ? saved.baseColor : '#ffffff';
+    state.snaps = {};
+    document.documentElement.style.setProperty('--base', state.baseColor);
     buildPanelTabs();
     document.querySelectorAll('[data-garment]').forEach(b => b.classList.toggle('on', b.dataset.garment === g));
-    const first = panelList()[0];
-    loadPanel(first, () => refreshInactive(drawPreview));
+    loadPanel(panel || panelList()[0], () => { refreshInactive(drawPreview); updateStepper(); });
   }
 
   /* ---------- presets ---------- */
@@ -361,17 +392,34 @@
   /* ---------- save / load / export ---------- */
   function projectData() {
     state.panels[state.activePanel] = serialize(canvas);
-    return { v: 1, garment: state.garment, baseColor: state.baseColor, panels: state.panels };
+    const store = Object.assign({}, state.store);
+    store[state.garment] = { panels: state.panels, baseColor: state.baseColor };
+    return { v: 2, garment: state.garment, store: store };
   }
   function loadProject(data) {
-    if (!data || !data.panels) return;
-    state.garment = data.garment || 'shirt';
-    state.baseColor = data.baseColor || '#4CB8FF';
-    state.panels = data.panels; state.snaps = {};
+    if (!data) return;
+    if (data.store) {
+      state.store = data.store; state.garment = data.garment || 'shirt';
+      const cur = state.store[state.garment] || { panels: {}, baseColor: '#ffffff' };
+      state.panels = cur.panels || {}; state.baseColor = cur.baseColor || '#ffffff';
+    } else if (data.panels) { // legacy single-garment format
+      state.store = {}; state.garment = data.garment || 'shirt';
+      state.panels = data.panels; state.baseColor = data.baseColor || '#ffffff';
+      state.store[state.garment] = { panels: state.panels, baseColor: state.baseColor };
+    } else return;
+    state.snaps = {};
     document.documentElement.style.setProperty('--base', state.baseColor);
     buildPanelTabs();
     document.querySelectorAll('[data-garment]').forEach(b => b.classList.toggle('on', b.dataset.garment === state.garment));
-    loadPanel(panelList()[0], () => refreshInactive(drawPreview));
+    loadPanel(panelList()[0], () => { refreshInactive(drawPreview); updateStepper(); });
+  }
+  function startOver() {
+    if (!confirm('Start over? This clears your whole design and can\'t be undone.')) return;
+    state.baseColor = '#ffffff';
+    document.documentElement.style.setProperty('--base', '#ffffff');
+    state.panels = {}; state.snaps = {}; state.store = {};
+    try { localStorage.removeItem('rcs_project'); } catch (e) {}
+    loadPanel(panelList()[0], () => { refreshInactive(drawPreview); updateStepper(); });
   }
   function doExport() {
     state.panels[state.activePanel] = serialize(canvas); snapActive();
@@ -407,7 +455,7 @@
       d.appendChild(customColor(state.activeColor, c => { state.activeColor = c; renderDrawer('colors'); }));
       d.appendChild(bigBtn('🪣 Fill this part', 'fill', fillPart));
       const h = document.createElement('p'); h.className = 'hint';
-      h.textContent = 'Pick a colour, then fill this part. Use the Front / Back / Sleeves tabs to colour each part. Undesigned areas stay plain white.';
+      h.textContent = 'Pick a colour, then fill this part. Use Next / Back to move through the stages. Undesigned areas stay plain white.';
       d.appendChild(h);
     }
 
@@ -608,6 +656,9 @@
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
       a.download = 'my-design.blockbox.json'; a.click(); URL.revokeObjectURL(a.href);
     };
+    $('btnReset').onclick = startOver;
+    $('stepBack').onclick = () => goStep(currentStepIndex() - 1);
+    $('stepNext').onclick = () => { const i = currentStepIndex(); if (i === STEPS.length - 1) openModal('uploadModal'); else goStep(i + 1); };
     $('btnLoad').onclick = () => $('fileProj').click();
     $('fileProj').onchange = e => {
       const f = e.target.files[0]; if (!f) return;

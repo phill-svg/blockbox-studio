@@ -23,6 +23,7 @@
     <button id="btnRedo" class="icon-btn" title="Redo">↷</button>
     <button id="btnSave" class="ghost-btn" title="Save project to a file">💾 Save</button>
     <button id="btnLoad" class="ghost-btn" title="Open a saved project">📂 Open</button>
+    <button id="btnReset" class="ghost-btn" title="Clear everything and start fresh">🔄 Start Over</button>
     <button id="btnHelp" class="ghost-btn">❓ Help</button>
     <button id="btnExportTop" class="cta-btn small">⬇ Get PNG</button>
   </div>
@@ -51,7 +52,15 @@
 
   <!-- Live avatar editor: you design directly on the character -->
   <section class="stage-col">
-    <div id="panelTabs" class="tabs"></div>
+    <div id="stepper" class="stepper">
+      <button id="stepBack" class="step-btn">◀ Back</button>
+      <div class="step-info">
+        <span id="stepLabel" class="step-label">Shirt — Front</span>
+        <span id="stepDots" class="step-dots"></span>
+      </div>
+      <button id="stepNext" class="step-btn primary">Next ▶</button>
+    </div>
+    <div id="panelTabs" class="tabs" hidden></div>
     <div class="live-editor">
       <div class="le-head"></div>
       <div class="le-mid">
@@ -74,7 +83,7 @@
       <button id="btnDelete" class="ghost-btn">🗑 Delete selected</button>
       <button id="btnClear" class="ghost-btn">✨ Clear this part</button>
     </div>
-    <p class="tip">You're designing right on the character! Use the tabs to switch between Front, Back and Sleeves. Built for Amelia Jane</p>
+    <p class="tip">You're designing right on the character! Press <b>Next ▶</b> to move through the stages: Shirt → Sleeves → Pants. Built for Amelia Jane 💜</p>
   </section>
 
   <!-- Actions -->
@@ -103,8 +112,8 @@
   <ol class="steps">
     <li>Pick <b>Shirt</b>, <b>Pants</b> or <b>Tee</b> at the top.</li>
     <li>Use the coloured tools on the left: <b>Colours, Patterns, Stickers, Text</b> and <b>Upload</b>.</li>
-    <li>Design each part with the <b>tabs</b> (Front / Back / Sleeves).</li>
-    <li>Watch the <b>live preview</b> on the right update as you go.</li>
+    <li>Design each stage, then press <b>Next ▶</b> to move on (Shirt → Sleeves → Pants).</li>
+    <li>Your design shows on the character as you go — tap <b>See it in 3D</b> too.</li>
     <li>Press <b>Save PNG for Roblox</b> to download your image.</li>
     <li>Upload it on Roblox (we'll show you how).</li>
   </ol>
