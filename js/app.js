@@ -390,14 +390,20 @@
         d.appendChild(swatchRow(PALETTE, state.activeColor, c => { state.activeColor = c; ensureBrush(); renderDrawer('brush'); }));
         d.appendChild(customColor(state.activeColor, c => { state.activeColor = c; ensureBrush(); renderDrawer('brush'); }));
       }
-      d.appendChild(label('Brush size'));
-      const srow = document.createElement('div'); srow.className = 'chips';
-      [['Fine', 7], ['Small', 14], ['Big', 26], ['Huge', 44]].forEach(([lbl, px]) => {
-        const b = document.createElement('button'); b.className = 'chip' + (state.brushSize === px ? ' on' : '');
-        b.textContent = lbl; b.onclick = () => { state.brushSize = px; ensureBrush(); renderDrawer('brush'); };
-        srow.appendChild(b);
-      });
-      d.appendChild(srow);
+      d.appendChild(label((state.brushMode === 'erase' ? 'Rubber' : 'Brush') + ' size'));
+      const wrap = document.createElement('div'); wrap.className = 'slider-wrap';
+      const sl = document.createElement('input');
+      sl.type = 'range'; sl.min = '3'; sl.max = '60'; sl.step = '1'; sl.value = state.brushSize; sl.className = 'size-slider';
+      const dotBox = document.createElement('div'); dotBox.className = 'size-dot-box';
+      const dot = document.createElement('span'); dot.className = 'size-dot'; dotBox.appendChild(dot);
+      const paintDot = () => {
+        const sz = Math.max(6, Math.min(40, state.brushSize));
+        dot.style.width = sz + 'px'; dot.style.height = sz + 'px';
+        dot.style.background = state.brushMode === 'erase' ? '#B8C0D0' : state.activeColor;
+      };
+      sl.oninput = () => { state.brushSize = +sl.value; ensureBrush(); paintDot(); };
+      wrap.appendChild(sl); wrap.appendChild(dotBox);
+      d.appendChild(wrap); paintDot();
       const p = document.createElement('p'); p.className = 'hint';
       p.innerHTML = 'Draw right on the shirt! 🎨<br>Use the <b>tabs</b> to draw on Front, Back or Sleeves. Pick another tool to move or delete your drawings.';
       d.appendChild(p);
@@ -513,14 +519,24 @@
 
   /* ---------- modals ---------- */
   function openModal(id) { $('backdrop').classList.add('open'); $(id).classList.add('open'); }
-  function closeModals() { $('backdrop').classList.remove('open'); document.querySelectorAll('.modal').forEach(m => m.classList.remove('open')); }
+  function closeModals() {
+    $('backdrop').classList.remove('open');
+    document.querySelectorAll('.modal').forEach(m => m.classList.remove('open'));
+    if (window.RCS && RCS.Preview3D) RCS.Preview3D.close();
+  }
+  function open3D() {
+    state.panels[state.activePanel] = serialize(canvas); snapActive();
+    refreshInactive(() => RCS.Preview3D.open(state));
+  }
 
   /* ---------- init ---------- */
   function init() {
     canvas = new fabric.Canvas('stage', { backgroundColor: 'transparent', preserveObjectStacking: true, selection: true });
     canvas.on('path:created', (e) => {
       const path = e.path;
-      if (state.brushMode === 'erase') path.set({ globalCompositeOperation: 'destination-out', selectable: false, evented: false });
+      // Brush strokes are "painted on" — not draggable, so kids don't move them by accident.
+      path.set({ selectable: false, evented: false });
+      if (state.brushMode === 'erase') path.set({ globalCompositeOperation: 'destination-out' });
       canvas.renderAll(); pushHistory(); afterChange();
     });
     canvas.on('object:modified', () => { pushHistory(); afterChange(); });
@@ -549,6 +565,7 @@
     $('btnExportTop').onclick = doExport;
     $('btnHelp').onclick = () => openModal('helpModal');
     $('btnUploadHelp').onclick = () => openModal('uploadModal');
+    $('btn3d').onclick = open3D;
     $('btnSave').onclick = () => {
       const blob = new Blob([JSON.stringify(projectData())], { type: 'application/json' });
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob);

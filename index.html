@@ -73,10 +73,12 @@
   <!-- Actions -->
   <aside class="preview-col">
     <h4>Finish up</h4>
+    <button id="btn3d" class="view3d-btn">🧊 See it in 3D</button>
     <button id="btnExport" class="cta-btn">⬇ Save PNG for Roblox</button>
     <button id="btnUploadHelp" class="link-btn">How do I upload it to Roblox?</button>
     <div class="finish-note">
       Your picture saves as a ready-to-use Roblox clothing image (585×559).
+      The base colour becomes the whole garment — anywhere you don't decorate stays that colour on Roblox.
     </div>
   </aside>
 </main>
@@ -118,6 +120,13 @@
   <p class="fine">Only upload art you're allowed to use. Copyrighted logos/characters get rejected.</p>
 </div>
 
+<div id="viewer3d" class="viewer3d">
+  <button class="modal-x" data-close>✕</button>
+  <h3 class="v3d-title">Your character in 3D</h3>
+  <div class="v3d-stage"><canvas id="c3d"></canvas></div>
+  <p class="v3d-hint">Drag to spin it around 🔄</p>
+</div>
+
 <div id="warnModal" class="modal">
   <button class="modal-x" data-close>✕</button>
   <h2>Quick reminder 🖼️</h2>
@@ -132,5 +141,6 @@
 <script src="js/stickers.js"></script>
 <script src="js/presets.js"></script>
 <script src="js/preview.js"></script>
+<script src="js/preview3d.js"></script>
 <script src="js/export.js"></script>
 <script src="js/app.js"></script>
