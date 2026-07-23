@@ -1,4 +1,4 @@
-/* app.js — Blockbox Studio orchestration.
+/* app.js — Dreambox Studio orchestration.
    Single interactive Fabric canvas (the "stage") represents the active panel.
    Other panels live as serialized JSON + snapshot canvases used for the live
    avatar preview and the final export. No frameworks, no network at runtime. */

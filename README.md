@@ -1,4 +1,4 @@
-# 🎨 Blockbox Studio
+# 🎨 Dreambox Studio
 
 A simple, fun website that lets kids design **2D Roblox clothing** (shirts, pants, t-shirts)
 and export an **upload-ready 585×559 PNG** — then upload it on Roblox.
@@ -23,7 +23,7 @@ and export an **upload-ready 585×559 PNG** — then upload it on Roblox.
 
 ## Why the site can't upload for you
 Roblox has no public API for classic-clothing uploads, and automating a Roblox login
-breaks their Terms of Service. So Blockbox Studio does everything up to the file, then shows
+breaks their Terms of Service. So Dreambox Studio does everything up to the file, then shows
 you exactly how to finish on **create.roblox.com**. (This also keeps age-verification, fees,
 and moderation on Roblox's side, where they belong.)
 
