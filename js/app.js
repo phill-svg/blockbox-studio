@@ -4,7 +4,7 @@
    avatar preview and the final export. No frameworks, no network at runtime. */
 (function () {
   const S = RCS.EDIT_SCALE;
-  const PROPS = ['rcsRole', 'custom', 'rcsSticker', 'globalCompositeOperation'];
+  const PROPS = ['rcsRole', 'custom', 'rcsSticker', 'rcsBrush', 'globalCompositeOperation'];
   const $ = (id) => document.getElementById(id);
 
   const FONTS = [
@@ -18,7 +18,7 @@
                    '#FF7AC6', '#8B5E3C', '#ffffff', '#B8C0D0', '#232A45', '#000000'];
 
   const state = {
-    garment: 'shirt', baseColor: '#4CB8FF', activePanel: 'front',
+    garment: 'shirt', baseColor: '#ffffff', activePanel: 'front',
     activeColor: '#6C5CE7', color2: '#ffffff', previewSide: 'front',
     brushMode: 'paint', brushSize: 14,
     panels: {}, snaps: {}
@@ -157,7 +157,7 @@
 
   function addObject(o) {
     canvas.add(o); canvas.setActiveObject(o); canvas.requestRenderAll();
-    pushHistory(); afterChange();
+    pushHistory(); afterChange(); updateObjBar();
   }
 
   /* ---------- tools ---------- */
@@ -237,6 +237,41 @@
     canvas.isDrawingMode = on;
     if (on) { ensureBrush(); canvas.discardActiveObject(); canvas.requestRenderAll(); }
   }
+  // Stickers/text/images can only be grabbed while their own tool is open — no accidental moves.
+  function toolAllowsMove(t) { return t === 'stickers' || t === 'text' || t === 'upload'; }
+  function setObjectsInteractive(on) {
+    if (!on) canvas.discardActiveObject();
+    canvas.selection = on;
+    canvas.forEachObject(o => { if (o.rcsRole === 'bg' || o.rcsBrush) return; o.selectable = on; o.evented = on; });
+    canvas.requestRenderAll();
+  }
+  function updateObjBar() {
+    const o = canvas.getActiveObject();
+    const bar = document.getElementById('objBar');
+    if (bar) bar.classList.toggle('show', !!(o && o.rcsRole !== 'bg' && !o.rcsBrush));
+  }
+  function objAction(kind) {
+    const o = canvas.getActiveObject();
+    if (!o || o.rcsRole === 'bg' || o.rcsBrush) return;
+    if (kind === 'dup') {
+      o.clone(cl => {
+        cl.set({ left: (o.left || 0) + 22, top: (o.top || 0) + 22, selectable: true, evented: true });
+        canvas.add(cl); canvas.setActiveObject(cl); canvas.requestRenderAll(); pushHistory(); afterChange(); updateObjBar();
+      }, ['rcsSticker']);
+    } else if (kind === 'flip') { o.set('flipX', !o.flipX); canvas.requestRenderAll(); pushHistory(); afterChange(); }
+    else if (kind === 'front') { canvas.bringToFront(o); canvas.requestRenderAll(); pushHistory(); afterChange(); }
+    else if (kind === 'back') { canvas.moveTo(o, 1); canvas.requestRenderAll(); pushHistory(); afterChange(); }
+  }
+  function surpriseMe() {
+    const cols = PALETTE.filter(c => !['#ffffff', '#000000', '#B8C0D0'].includes(c));
+    const rnd = a => a[Math.floor(Math.random() * a.length)];
+    setBaseColor(rnd(cols));
+    state.activeColor = rnd(cols);
+    state.color2 = rnd(['#ffffff'].concat(cols));
+    applyPattern(rnd(RCS.Patterns.catalog).id);
+    state.activeColor = rnd(cols);
+    addSticker(rnd(RCS.Stickers.catalog).id);
+  }
   function deleteActive() {
     const o = canvas.getActiveObject();
     if (o && o.rcsRole !== 'bg') { canvas.remove(o); canvas.discardActiveObject(); pushHistory(); afterChange(); }
@@ -262,6 +297,7 @@
       history = []; hIdx = -1; pushHistory();
       snapActive(); drawPreview(); updatePanelTabs();
       if (currentTool === 'brush') setDrawing(true);
+      setObjectsInteractive(toolAllowsMove(currentTool)); updateObjBar();
       cb && cb();
     });
   }
@@ -366,13 +402,13 @@
 
     if (tool === 'colors') {
       head.textContent = 'Colours';
-      d.appendChild(label('Paint colour (stickers, text, fill)'));
+      d.appendChild(label('Paint colour'));
       d.appendChild(swatchRow(PALETTE, state.activeColor, c => { state.activeColor = c; renderDrawer('colors'); }));
       d.appendChild(customColor(state.activeColor, c => { state.activeColor = c; renderDrawer('colors'); }));
-      d.appendChild(bigBtn('Fill this part', 'fill', fillPart));
-      d.appendChild(label('Whole outfit base'));
-      d.appendChild(swatchRow(PALETTE, state.baseColor, c => { setBaseColor(c); renderDrawer('colors'); }));
-      d.appendChild(customColor(state.baseColor, c => { setBaseColor(c); renderDrawer('colors'); }));
+      d.appendChild(bigBtn('🪣 Fill this part', 'fill', fillPart));
+      const h = document.createElement('p'); h.className = 'hint';
+      h.textContent = 'Pick a colour, then fill this part. Use the Front / Back / Sleeves tabs to colour each part. Undesigned areas stay plain white.';
+      d.appendChild(h);
     }
 
     if (tool === 'brush') {
@@ -535,7 +571,7 @@
     canvas.on('path:created', (e) => {
       const path = e.path;
       // Brush strokes are "painted on" — not draggable, so kids don't move them by accident.
-      path.set({ selectable: false, evented: false });
+      path.set({ selectable: false, evented: false, rcsBrush: true });
       if (state.brushMode === 'erase') path.set({ globalCompositeOperation: 'destination-out' });
       canvas.renderAll(); pushHistory(); afterChange();
     });
@@ -543,8 +579,9 @@
     canvas.on('object:removed', () => { if (!restoring) afterChange(); });
     canvas.on('text:changed', () => afterChange());
     canvas.on('text:editing:exited', () => { pushHistory(); afterChange(); });
-    canvas.on('selection:created', () => { if (currentTool === 'text') renderDrawer('text'); });
-    canvas.on('selection:updated', () => { if (currentTool === 'text') renderDrawer('text'); });
+    canvas.on('selection:created', () => { if (currentTool === 'text') renderDrawer('text'); updateObjBar(); });
+    canvas.on('selection:updated', () => { if (currentTool === 'text') renderDrawer('text'); updateObjBar(); });
+    canvas.on('selection:cleared', () => updateObjBar());
 
     document.documentElement.style.setProperty('--base', state.baseColor);
 
@@ -588,6 +625,8 @@
       b.onclick = () => applyPreset(pr);
       pl.appendChild(b);
     });
+    $('btnSurprise').onclick = surpriseMe;
+    document.querySelectorAll('#objBar [data-obj]').forEach(b => b.onclick = () => objAction(b.dataset.obj));
 
     // modal closers
     document.querySelectorAll('[data-close]').forEach(b => b.onclick = closeModals);
@@ -616,6 +655,8 @@
     currentTool = tool;
     document.querySelectorAll('[data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === tool));
     setDrawing(tool === 'brush');
+    setObjectsInteractive(toolAllowsMove(tool));
+    updateObjBar();
     renderDrawer(tool);
   }
 

@@ -31,5 +31,19 @@ RCS.Presets = [
     id: 'denim', name: 'Blue Jeans', emoji: '👖', garment: 'pants', base: '#3E63A8',
     front: { pattern: { id: 'diagonal', c1: '#3E63A8', c2: '#33538F' } },
     arms:  { pattern: { id: 'diagonal', c1: '#3E63A8', c2: '#33538F' } }
+  },
+  {
+    id: 'galaxy', name: 'Galaxy', emoji: '🌌', garment: 'shirt', base: '#1B1E3A',
+    front: { pattern: { id: 'stars', c1: '#1B1E3A', c2: '#FFD23F' } },
+    arms:  { pattern: { id: 'stars', c1: '#1B1E3A', c2: '#8f7bff' } }
+  },
+  {
+    id: 'bee', name: 'Buzzy Bee', emoji: '🐝', garment: 'shirt', base: '#FFC642',
+    front: { pattern: { id: 'stripes', c1: '#FFC642', c2: '#232A45' } },
+    arms:  { pattern: { id: 'stripes', c1: '#FFC642', c2: '#232A45' } }
+  },
+  {
+    id: 'frost', name: 'Ice', emoji: '❄️', garment: 'shirt', base: '#8FD3FF',
+    front: { pattern: { id: 'scales', c1: '#8FD3FF', c2: '#ffffff' } }
   }
 ];

@@ -18,7 +18,7 @@
   --mint: #22C39A;
   --sun: #FFC642;
   --sky: #4CB8FF;
-  --base: #4CB8FF;
+  --base: #ffffff;
   --r: 18px;
   --shadow: 0 10px 24px rgba(35,42,69,.10);
 }
@@ -193,6 +193,17 @@ button { font-family: inherit; cursor: pointer; border: none; }
 #stage { border-radius: 8px; touch-action: none; }
 .stage-actions { display: flex; gap: 8px; }
 .tip { font-size: 13px; color: var(--muted); max-width: 380px; text-align: center; line-height: 1.5; }
+
+.surprise-btn {
+  width: 100%; margin-bottom: 10px; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 15px;
+  color: #fff; background: linear-gradient(160deg, #ff8f5e, var(--coral)); box-shadow: 0 4px 0 #d9534f;
+}
+.surprise-btn:active { transform: translateY(2px); box-shadow: none; }
+
+.obj-bar { display: none; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.obj-bar.show { display: flex; }
+.obj-bar button { padding: 9px 13px; border-radius: 11px; background: var(--panel); color: var(--ink); font-weight: 600; font-size: 14px; box-shadow: 0 3px 0 #cfd6ee; }
+.obj-bar button:active { transform: translateY(2px); box-shadow: none; }
 
 /* Live avatar editor — the editable canvas is the torso, with a live body around it */
 .live-editor {

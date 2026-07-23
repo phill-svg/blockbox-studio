@@ -51,6 +51,25 @@ RCS.Patterns = (function () {
       x.strokeStyle = b; x.lineWidth = s * 0.14; x.lineJoin = 'round'; x.beginPath();
       for (let i = -1; i < 3; i++) { const o = i * s; x.moveTo(o, s * 0.7); x.lineTo(o + s / 2, s * 0.3); x.lineTo(o + s, s * 0.7); }
       x.stroke();
+    }),
+    grid: (a, b) => tile(40, (x, s) => {
+      x.fillStyle = a; x.fillRect(0, 0, s, s);
+      x.strokeStyle = b; x.lineWidth = s * 0.1;
+      x.beginPath(); x.moveTo(s / 2, 0); x.lineTo(s / 2, s); x.moveTo(0, s / 2); x.lineTo(s, s / 2); x.stroke();
+    }),
+    waves: (a, b) => tile(48, (x, s) => {
+      x.fillStyle = a; x.fillRect(0, 0, s, s);
+      x.strokeStyle = b; x.lineWidth = s * 0.12; x.lineCap = 'round';
+      for (let o = -1; o < 2; o++) {
+        x.beginPath(); x.moveTo(0, s * 0.5 + o * s);
+        x.quadraticCurveTo(s * 0.25, s * 0.3 + o * s, s * 0.5, s * 0.5 + o * s);
+        x.quadraticCurveTo(s * 0.75, s * 0.7 + o * s, s, s * 0.5 + o * s); x.stroke();
+      }
+    }),
+    scales: (a, b) => tile(44, (x, s) => {
+      x.fillStyle = a; x.fillRect(0, 0, s, s);
+      x.strokeStyle = b; x.lineWidth = s * 0.1;
+      for (let yy = 0; yy <= s; yy += s / 2) for (let xx = 0; xx <= s; xx += s / 2) { x.beginPath(); x.arc(xx, yy, s * 0.28, 0, Math.PI); x.stroke(); }
     })
   };
 
@@ -83,7 +102,10 @@ RCS.Patterns = (function () {
     { id: 'zigzag',   name: 'Zigzag',   fn: 'zigzag' },
     { id: 'hearts',   name: 'Hearts',   fn: 'hearts' },
     { id: 'stars',    name: 'Stars',    fn: 'stars' },
-    { id: 'camo',     name: 'Camo',     fn: 'camo' }
+    { id: 'camo',     name: 'Camo',     fn: 'camo' },
+    { id: 'grid',     name: 'Grid',     fn: 'grid' },
+    { id: 'waves',    name: 'Waves',    fn: 'waves' },
+    { id: 'scales',   name: 'Scales',   fn: 'scales' }
   ];
 
   function build(id, c1, c2, c3) {
